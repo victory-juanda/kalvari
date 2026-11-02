@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Pencatatan Data Umum Jemaat / Warga Unit</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .table-scrollbar::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .table-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white/10 p-2 rounded-lg">
+                        <i data-lucide="users" class="w-6 h-6 sm:w-7 sm:h-7 text-indigo-200"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base sm:text-xl font-bold tracking-tight">DATA UMUM JEMAAT / WARGA UNIT</h1>
+                        <p class="text-[10px] sm:text-xs text-indigo-200">Sistem Informasi Kependudukan Unit & Jemaat</p>
+                    </div>
+                </div>
+                <!-- Mobile toggle settings -->
+                <button onclick="openConfigModal()" class="md:hidden text-indigo-200 hover:text-white p-1 rounded-lg bg-indigo-800">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full md:w-auto">
+                <button onclick="openFormModal()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all shadow-sm active:scale-95">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span>Tambah Data</span>
+                </button>
+                <button onclick="openConfigModal()" class="hidden md:inline-flex items-center justify-center gap-1.5 bg-indigo-800 hover:bg-indigo-900 text-indigo-100 text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all border border-indigo-600 shadow-sm">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-300"></i>
+                    <span>Hubungkan Spreadsheet</span>
+                </button>
+                <button onclick="exportToCSV()" class="inline-flex items-center justify-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-medium px-3 py-2 sm:py-2.5 rounded-lg transition-all border border-indigo-500 shadow-sm">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Ekspor CSV</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 flex-1 w-full">
+
+        <!-- Banner Connection Status Google Sheets -->
+        <div id="sheetsStatusBanner" class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-amber-800">
+            <div class="flex items-center gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                <span>Database saat ini tersimpan <strong>Lokal di Browser</strong>. Hubungkan Google Spreadsheet Anda agar data tersimpan otomatis di cloud.</span>
+            </div>
+            <button onclick="openConfigModal()" class="underline font-semibold text-amber-900 hover:text-amber-700 whitespace-nowrap">
+                Atur Google Sheets
+            </button>
+        </div>
+
+        <!-- Stats Overview Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <div class="bg-white p-3.5 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 sm:gap-4">
+                <div class="p-2.5 sm:p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                    <i data-lucide="home" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-medium text-slate-500">Total Kepala Keluarga</p>
+                    <h3 class="text-lg sm:text-2xl font-bold text-slate-800" id="stat-total-kk">0</h3>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 sm:gap-4">
+                <div class="p-2.5 sm:p-3 bg-blue-50 text-blue-600 rounded-lg">
+                    <i data-lucide="user-check" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-medium text-slate-500">Total Anggota Warga</p>
+                    <h3 class="text-lg sm:text-2xl font-bold text-slate-800" id="stat-total-warga">0</h3>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 sm:gap-4">
+                <div class="p-2.5 sm:p-3 bg-cyan-50 text-cyan-600 rounded-lg">
+                    <i data-lucide="users" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-medium text-slate-500">Laki-Laki / Perempuan</p>
+                    <h3 class="text-sm sm:text-lg font-bold text-slate-800" id="stat-gender-ratio">0 / 0</h3>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 sm:gap-4">
+                <div class="p-2.5 sm:p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <i data-lucide="award" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-medium text-slate-500">Status Sidi & Nikah</p>
+                    <h3 class="text-sm sm:text-lg font-bold text-slate-800" id="stat-sacrament">0 S / 0 N</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & View Switcher Bar -->
+        <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row gap-3 justify-between items-center">
+            <div class="relative w-full md:w-80">
+                <i data-lucide="search" class="w-4 h-4 sm:w-5 sm:h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" oninput="renderData()" placeholder="Cari nama, KK, atau tempat lahir..." class="w-full pl-9 sm:pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm">
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-between md:justify-end">
+                <select id="filterDomisili" onchange="renderData()" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1 sm:flex-none">
+                    <option value="">Semua Domisili</option>
+                    <option value="Dalam Jemaat">Dalam Jemaat</option>
+                    <option value="Luar Jemaat">Luar Jemaat</option>
+                </select>
+                
+                <select id="filterGolDarah" onchange="renderData()" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1 sm:flex-none">
+                    <option value="">Semua Gol. Darah</option>
+                    <option value="A">Gol. A</option>
+                    <option value="B">Gol. B</option>
+                    <option value="AB">Gol. AB</option>
+                    <option value="O">Gol. O</option>
+                    <option value="??">Belum Tahu</option>
+                </select>
+
+                <!-- Responsive View Switcher (Desktop Table vs Mobile Card) -->
+                <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
+                    <button id="btnViewTable" onclick="switchView('table')" title="Tampilan Tabel" class="p-1 rounded text-indigo-700 bg-white shadow-sm">
+                        <i data-lucide="table" class="w-4 h-4"></i>
+                    </button>
+                    <button id="btnViewCard" onclick="switchView('card')" title="Tampilan Kartu (HP)" class="p-1 rounded text-slate-500 hover:text-indigo-700">
+                        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. DESKTOP/TABLE VIEW CONTAINER -->
+        <div id="tableViewContainer" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden block">
+            <div class="overflow-x-auto table-scrollbar">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-indigo-900 text-white font-semibold uppercase tracking-wider text-[11px] sticky top-0">
+                        <tr>
+                            <th rowspan="2" class="p-3 border-r border-indigo-800 text-center w-10">No</th>
+                            <th rowspan="2" class="p-3 border-r border-indigo-800 min-w-[170px]">Nama Anggota Keluarga</th>
+                            <th rowspan="2" class="p-3 border-r border-indigo-800 min-w-[120px]">Status Keluarga</th>
+                            <th rowspan="2" class="p-3 border-r border-indigo-800 min-w-[90px]">L / P</th>
+                            <th colspan="4" class="p-2 border-r border-indigo-800 text-center bg-indigo-950">Tempat & Tanggal Lahir</th>
+                            <th rowspan="2" class="p-3 border-r border-indigo-800 text-center min-w-[100px]">Domisili</th>
+                            <th rowspan="2" class="p-3 border-r border-indigo-800 text-center w-12">Gol</th>
+                            <th rowspan="2" class="p-3 border-r border-indigo-800 min-w-[100px]">Pendidikan</th>
+                            <th rowspan="2" class="p-3 border-r border-indigo-800 min-w-[110px]">Pekerjaan</th>
+                            <th rowspan="2" class="p-3 border-r border-indigo-800 min-w-[140px]">Status Sakramental</th>
+                            <th colspan="9" class="p-2 border-r border-indigo-800 text-center bg-indigo-950">Akta Pelayanan Gereja</th>
+                            <th rowspan="2" class="p-3 text-center min-w-[90px]">Aksi</th>
+                        </tr>
+                        <tr>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 min-w-[80px]">Tempat</th>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-10">Tgl</th>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-10">Bln</th>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-14">Thn</th>
+                            
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-10">Tgl</th>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-10">Bln</th>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-14">Baptis</th>
+                            
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-10">Tgl</th>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-10">Bln</th>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-14">Sidi</th>
+                            
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-10">Tgl</th>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-10">Bln</th>
+                            <th class="p-2 border-r border-indigo-800 text-center bg-indigo-950 w-14">Nikah</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wargaTableBody" class="divide-y divide-slate-200">
+                        <!-- Table rows inserted by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. MOBILE CARD VIEW CONTAINER (Auto layout for Small Screens) -->
+        <div id="cardViewContainer" class="hidden space-y-4">
+            <!-- Cards inserted by JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden bg-white p-12 rounded-xl border border-slate-200 text-center mt-4">
+            <i data-lucide="folder-open" class="w-12 h-12 mx-auto text-slate-300 mb-3"></i>
+            <h3 class="text-base font-semibold text-slate-700">Belum Ada Data Warga</h3>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">Gunakan tombol "Tambah Data" untuk memasukkan data warga unit jemaat baru.</p>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto text-center text-xs text-slate-500">
+        <p>© 2026 Sistem Informasi Pencatatan Data Jemaat / Warga Unit Sektor 07.</p>
+    </footer>
+
+    <!-- MODAL FORM INPUT & EDIT DATA -->
+    <div id="modalForm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-3 sm:p-4 hidden overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-slate-200 my-auto">
+            
+            <div class="bg-indigo-700 text-white px-5 py-3.5 rounded-t-2xl flex justify-between items-center sticky top-0 z-10">
+                <h2 id="modalTitle" class="text-base sm:text-lg font-bold flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                    <span>Tambah Data Warga Unit</span>
+                </h2>
+                <button onclick="closeFormModal()" class="text-indigo-200 hover:text-white p-1 rounded-lg hover:bg-white/10">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <form id="wargaForm" onsubmit="saveWarga(event)" class="p-4 sm:p-6 space-y-5">
+                <input type="hidden" id="editIndex" value="-1">
+
+                <!-- Section 1: Informasi KK -->
+                <div class="bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-200 space-y-3">
+                    <h3 class="font-semibold text-indigo-900 text-xs sm:text-sm flex items-center gap-2 border-b border-slate-200 pb-2">
+                        <i data-lucide="home" class="w-4 h-4 text-indigo-600"></i>
+                        Data Keluarga
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Nama Kepala Keluarga *</label>
+                            <input type="text" id="namaKk" required placeholder="Contoh: RONI JULIUS SIWABESSY" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Nama Anggota Keluarga *</label>
+                            <input type="text" id="namaAnggota" required placeholder="Contoh: Roni Julius Siwabessy" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Status Dalam Keluarga *</label>
+                            <select id="statusKeluarga" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500">
+                                <option value="Kepala Keluarga">Kepala Keluarga</option>
+                                <option value="Istri">Istri</option>
+                                <option value="Anak">Anak</option>
+                                <option value="Mertua">Mertua</option>
+                                <option value="Adik">Adik</option>
+                                <option value="Cucu">Cucu</option>
+                                <option value="Keponakan">Keponakan</option>
+                                <option value="Keluarga Lain">Keluarga Lain</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Jenis Kelamin *</label>
+                            <select id="jenisKelamin" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500">
+                                <option value="Laki-Laki">Laki-Laki</option>
+                                <option value="Perempuan">Perempuan</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Identitas Diri -->
+                <div class="bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-200 space-y-3">
+                    <h3 class="font-semibold text-indigo-900 text-xs sm:text-sm flex items-center gap-2 border-b border-slate-200 pb-2">
+                        <i data-lucide="user" class="w-4 h-4 text-indigo-600"></i>
+                        Identitas & Kelahiran
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Tempat Lahir</label>
+                            <input type="text" id="tempatLahir" placeholder="Contoh: Ambon" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm">
+                        </div>
+                        <div class="sm:col-span-2 grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-medium text-slate-500 mb-1">Tgl Lahir</label>
+                                <input type="text" id="tgl" placeholder="00" maxlength="2" class="w-full px-2 py-2 bg-white border border-slate-300 rounded-lg text-xs text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-medium text-slate-500 mb-1">Bln Lahir</label>
+                                <input type="text" id="bln" placeholder="00" maxlength="2" class="w-full px-2 py-2 bg-white border border-slate-300 rounded-lg text-xs text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-medium text-slate-500 mb-1">Thn Lahir</label>
+                                <input type="text" id="thn" placeholder="0000" maxlength="4" class="w-full px-2 py-2 bg-white border border-slate-300 rounded-lg text-xs text-center">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Status Domisili</label>
+                            <select id="statusDomisili" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm">
+                                <option value="Dalam Jemaat">Dalam Jemaat</option>
+                                <option value="Luar Jemaat">Luar Jemaat</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Golongan Darah</label>
+                            <select id="golDarah" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm">
+                                <option value="O">O</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="AB">AB</option>
+                                <option value="??">Belum Tahu (??)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Pendidikan</label>
+                            <select id="pendidikan" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm">
+                                <option value="Belum Sekolah">Belum Sekolah</option>
+                                <option value="Sedang SD">Sedang SD</option>
+                                <option value="Tamat SD">Tamat SD</option>
+                                <option value="Sedang SMP">Sedang SMP</option>
+                                <option value="Tamat SMP">Tamat SMP</option>
+                                <option value="Sedang SMA">Sedang SMA</option>
+                                <option value="Tamat SMA">Tamat SMA</option>
+                                <option value="Sedang D3">Sedang D3</option>
+                                <option value="Tamat D3">Tamat D3</option>
+                                <option value="Sedang S1">Sedang S1</option>
+                                <option value="Tamat S1">Tamat S1</option>
+                                <option value="Tamat S2">Tamat S2</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Pekerjaan</label>
+                            <input type="text" id="pekerjaan" placeholder="Contoh: PNS" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Sakramen -->
+                <div class="bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-200 space-y-3">
+                    <h3 class="font-semibold text-indigo-900 text-xs sm:text-sm flex items-center gap-2 border-b border-slate-200 pb-2">
+                        <i data-lucide="cross" class="w-4 h-4 text-indigo-600"></i>
+                        Status Sakramental & Akta Pelayanan
+                    </h3>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Status Sakramental</label>
+                        <select id="statusSakramental" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs sm:text-sm">
+                            <option value="Sudah Baptis, Sidi dan Nikah">Sudah Baptis, Sidi dan Nikah</option>
+                            <option value="Sudah Baptis dan Sidi, Belum Nikah">Sudah Baptis dan Sidi, Belum Nikah</option>
+                            <option value="Sudah Baptis, Belum Sidi dan Nikah">Sudah Baptis, Belum Sidi dan Nikah</option>
+                            <option value="Belum Baptis">Belum Baptis</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                        <!-- Baptis -->
+                        <div class="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1.5">
+                            <h4 class="text-xs font-semibold text-slate-700 border-b pb-1">Tgl Baptis</h4>
+                            <div class="grid grid-cols-3 gap-1">
+                                <input type="text" id="baptisTgl" placeholder="Tgl" maxlength="2" class="px-1.5 py-1 border rounded text-xs text-center">
+                                <input type="text" id="baptisBln" placeholder="Bln" maxlength="2" class="px-1.5 py-1 border rounded text-xs text-center">
+                                <input type="text" id="baptisThn" placeholder="Thn" maxlength="4" class="px-1.5 py-1 border rounded text-xs text-center">
+                            </div>
+                        </div>
+
+                        <!-- Sidi -->
+                        <div class="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1.5">
+                            <h4 class="text-xs font-semibold text-slate-700 border-b pb-1">Tgl Sidi</h4>
+                            <div class="grid grid-cols-3 gap-1">
+                                <input type="text" id="sidiTgl" placeholder="Tgl" maxlength="2" class="px-1.5 py-1 border rounded text-xs text-center">
+                                <input type="text" id="sidiBln" placeholder="Bln" maxlength="2" class="px-1.5 py-1 border rounded text-xs text-center">
+                                <input type="text" id="sidiThn" placeholder="Thn" maxlength="4" class="px-1.5 py-1 border rounded text-xs text-center">
+                            </div>
+                        </div>
+
+                        <!-- Nikah -->
+                        <div class="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1.5">
+                            <h4 class="text-xs font-semibold text-slate-700 border-b pb-1">Tgl Nikah</h4>
+                            <div class="grid grid-cols-3 gap-1">
+                                <input type="text" id="nikahTgl" placeholder="Tgl" maxlength="2" class="px-1.5 py-1 border rounded text-xs text-center">
+                                <input type="text" id="nikahBln" placeholder="Bln" maxlength="2" class="px-1.5 py-1 border rounded text-xs text-center">
+                                <input type="text" id="nikahThn" placeholder="Thn" maxlength="4" class="px-1.5 py-1 border rounded text-xs text-center">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modalAlert" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700"></div>
+
+                <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-200">
+                    <button type="button" onclick="closeFormModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs sm:text-sm">Batal</button>
+                    <button type="submit" id="btnSubmitForm" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-xs sm:text-sm flex items-center gap-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Simpan Data</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL INTEGRASI GOOGLE SHEETS -->
+    <div id="modalConfig" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="file-spreadsheet" class="w-5 h-5 text-emerald-600"></i>
+                    Integrasi Google Sheets Database
+                </h3>
+                <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Anda dapat menghubungkan aplikasi ini ke **Google Sheets** milik Anda via Google Apps Script (Web App URL) agar setiap penambahan data otomatis tersinkron ke spreadsheet online.
+            </p>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL</label>
+                <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500">
+                <p class="text-[10px] text-slate-400 mt-1">Kosongkan jika hanya ingin menggunakan penyimpanan internal browser (LocalStorage).</p>
+            </div>
+
+            <div class="bg-slate-100 p-3 rounded-lg text-[11px] text-slate-600 space-y-1">
+                <p class="font-semibold text-slate-800">Petunjuk Singkat (Google Apps Script):</p>
+                <ol class="list-decimal pl-4 space-y-0.5">
+                    <li>Buat Spreadsheet di Google Drive Anda.</li>
+                    <li>Buka menu <i>Ekstensi &gt; Apps Script</i>.</li>
+                    <li>Paste kode `doPost(e)` Google Apps Script sederhana.</li>
+                    <li>Klik <i>Terapkan (Deploy) &gt; Sebagai Web App (Akses: Siapa Saja)</i>.</li>
+                    <li>Copy URL Web App dan tempelkan di atas.</li>
+                </ol>
+            </div>
+
+            <div class="flex justify-between items-center pt-2 border-t">
+                <button onclick="fetchFromSheets()" class="text-xs text-indigo-600 font-semibold hover:underline flex items-center gap-1">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Dari Sheets
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="closeConfigModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs">Batal</button>
+                    <button onclick="saveGoogleSheetsUrl()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-xs">Simpan Config</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg text-xs sm:text-sm flex items-center gap-3 transition-all duration-300 transform translate-y-10 opacity-0 pointer-events-none z-50">
+        <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+        <span id="toastMsg">Pesan Notifikasi</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Sample Initial Data from attachment photo
+        const initialData = [
+            { namaKk: "RONI JULIUS SIWABESSY", namaAnggota: "Roni Julius Siwabessy", statusKeluarga: "Kepala Keluarga", jenisKelamin: "Laki-Laki", tempatLahir: "Ullath", tgl: "12", bln: "01", thn: "1964", statusDomisili: "Dalam Jemaat", golDarah: "O", pendidikan: "Tamat S1", pekerjaan: "Pegawai Swasta", statusSakramental: "Sudah Baptis, Sidi dan Nikah", baptisTgl: "26", baptisBln: "12", baptisThn: "1964", sidiTgl: "20", sidiBln: "03", sidiThn: "1983", nikahTgl: "06", nikahBln: "05", nikahThn: "1997" },
+            { namaKk: "RONI JULIUS SIWABESSY", namaAnggota: "Desy F. A. Hetaria/S", statusKeluarga: "Istri", jenisKelamin: "Perempuan", tempatLahir: "Ambon", tgl: "27", bln: "12", thn: "1969", statusDomisili: "Dalam Jemaat", golDarah: "O", pendidikan: "Tamat S2", pekerjaan: "Dosen PNS", statusSakramental: "Sudah Baptis, Sidi dan Nikah", baptisTgl: "28", baptisBln: "12", baptisThn: "1969", sidiTgl: "20", sidiBln: "03", sidiThn: "1988", nikahTgl: "06", nikahBln: "05", nikahThn: "1997" },
+            { namaKk: "RONI JULIUS SIWABESSY", namaAnggota: "Nidia V. P. Siwabessy", statusKeluarga: "Anak", jenisKelamin: "Perempuan", tempatLahir: "Ambon", tgl: "14", bln: "02", thn: "1998", statusDomisili: "Luar Jemaat", golDarah: "O", pendidikan: "Tamat S2", pekerjaan: "Pegawai Swasta", statusSakramental: "Sudah Baptis dan Sidi, Belum Nikah", baptisTgl: "10", baptisBln: "05", baptisThn: "1998", sidiTgl: "29", sidiBln: "03", sidiThn: "2015", nikahTgl: "00", nikahBln: "00", nikahThn: "0000" },
+            { namaKk: "CHRIST M. PASAL", namaAnggota: "Christ M. Pasal", statusKeluarga: "Kepala Keluarga", jenisKelamin: "Laki-Laki", tempatLahir: "Banda", tgl: "08", bln: "05", thn: "1964", statusDomisili: "Dalam Jemaat", golDarah: "O", pendidikan: "Tamat SMA", pekerjaan: "Wirausaha", statusSakramental: "Sudah Baptis, Sidi dan Nikah", baptisTgl: "00", baptisBln: "00", baptisThn: "0000", sidiTgl: "00", sidiBln: "00", sidiThn: "0000", nikahTgl: "16", nikahBln: "09", nikahThn: "1984" },
+            { namaKk: "JANTJE GHASALZ", namaAnggota: "Jantje Ghasalz", statusKeluarga: "Kepala Keluarga", jenisKelamin: "Laki-Laki", tempatLahir: "Ambon", tgl: "06", bln: "05", thn: "1946", statusDomisili: "Dalam Jemaat", golDarah: "O", pendidikan: "Tamat SMA", pekerjaan: "Pensiunan/Emeritus", statusSakramental: "Sudah Baptis, Sidi dan Nikah", baptisTgl: "00", baptisBln: "00", baptisThn: "0000", sidiTgl: "00", sidiBln: "00", sidiThn: "0000", nikahTgl: "18", nikahBln: "08", nikahThn: "1984" }
+        ];
+
+        let dataWarga = [];
+        let googleSheetsUrl = '';
+        let currentView = 'table'; // 'table' or 'card'
+
+        window.onload = function() {
+            lucide.createIcons();
+            googleSheetsUrl = localStorage.getItem('google_sheets_script_url') || '';
+            loadData();
+            
+            // Auto view selection on small mobile screen
+            if (window.innerWidth < 768) {
+                switchView('card');
+            }
+            updateSheetsBanner();
+        };
+
+        // Responsive Window Resize Handler
+        window.onresize = function() {
+            if (window.innerWidth < 768 && currentView === 'table') {
+                // Keep choice or notify user
+            }
+        };
+
+        function switchView(view) {
+            currentView = view;
+            const tableView = document.getElementById('tableViewContainer');
+            const cardView = document.getElementById('cardViewContainer');
+            const btnTable = document.getElementById('btnViewTable');
+            const btnCard = document.getElementById('btnViewCard');
+
+            if (view === 'table') {
+                tableView.classList.remove('hidden');
+                cardView.classList.add('hidden');
+                btnTable.className = 'p-1 rounded text-indigo-700 bg-white shadow-sm';
+                btnCard.className = 'p-1 rounded text-slate-500 hover:text-indigo-700';
+            } else {
+                tableView.classList.add('hidden');
+                cardView.classList.remove('hidden');
+                btnCard.className = 'p-1 rounded text-indigo-700 bg-white shadow-sm';
+                btnTable.className = 'p-1 rounded text-slate-500 hover:text-indigo-700';
+            }
+            renderData();
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('data_warga_unit');
+            if (saved) {
+                try {
+                    dataWarga = JSON.parse(saved);
+                } catch (e) {
+                    dataWarga = [...initialData];
+                }
+            } else {
+                dataWarga = [...initialData];
+                saveToLocalStorage();
+            }
+            renderData();
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('data_warga_unit', JSON.stringify(dataWarga));
+        }
+
+        function updateSheetsBanner() {
+            const banner = document.getElementById('sheetsStatusBanner');
+            if (googleSheetsUrl && googleSheetsUrl.trim() !== '') {
+                banner.className = "bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-emerald-800";
+                banner.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+                        <span>Aplikasi terhubung ke <strong>Google Sheets Database Cloud</strong>.</span>
+                    </div>
+                    <button onclick="openConfigModal()" class="underline font-semibold text-emerald-900 hover:text-emerald-700 whitespace-nowrap">
+                        Pengaturan URL
+                    </button>
+                `;
+            } else {
+                banner.className = "bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-amber-800";
+                banner.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                        <span>Database saat ini tersimpan <strong>Lokal di Browser</strong>. Hubungkan Google Spreadsheet Anda agar data tersimpan otomatis di cloud.</span>
+                    </div>
+                    <button onclick="openConfigModal()" class="underline font-semibold text-amber-900 hover:text-amber-700 whitespace-nowrap">
+                        Hubungkan Spreadsheet
+                    </button>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        // Render Data Function for both Desktop Table and Mobile Card
+        function renderData() {
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const filterDom = document.getElementById('filterDomisili').value;
+            const filterGol = document.getElementById('filterGolDarah').value;
+
+            const filteredData = dataWarga.filter(item => {
+                const matchSearch = item.namaAnggota.toLowerCase().includes(searchVal) ||
+                                    item.namaKk.toLowerCase().includes(searchVal) ||
+                                    (item.tempatLahir && item.tempatLahir.toLowerCase().includes(searchVal));
+                const matchDom = filterDom === '' || item.statusDomisili === filterDom;
+                const matchGol = filterGol === '' || item.golDarah === filterGol;
+                return matchSearch && matchDom && matchGol;
+            });
+
+            const emptyState = document.getElementById('emptyState');
+            if (filteredData.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            renderTableView(filteredData);
+            renderCardView(filteredData);
+            updateStatistics();
+            lucide.createIcons();
+        }
+
+        // 1. Table View Rendering
+        function renderTableView(filteredData) {
+            const tbody = document.getElementById('wargaTableBody');
+            tbody.innerHTML = '';
+
+            let currentKK = '';
+            let globalIndex = 1;
+
+            filteredData.forEach(item => {
+                const realIndex = dataWarga.indexOf(item);
+
+                if (item.namaKk !== currentKK) {
+                    currentKK = item.namaKk;
+                    const groupRow = document.createElement('tr');
+                    groupRow.className = 'bg-slate-100 font-semibold text-indigo-900 border-t-2 border-indigo-200';
+                    groupRow.innerHTML = `
+                        <td colspan="23" class="p-2.5 px-4 text-xs tracking-wide uppercase flex items-center gap-2">
+                            <i data-lucide="folder" class="w-4 h-4 text-indigo-600"></i>
+                            KEPALA KELUARGA : <span class="font-bold underline">${escapeHtml(currentKK)}</span>
+                        </td>
+                    `;
+                    tbody.appendChild(groupRow);
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-indigo-50/50 transition-colors text-[11px] text-slate-700';
+
+                tr.innerHTML = `
+                    <td class="p-2 text-center border-r border-slate-200 font-medium">${globalIndex++}</td>
+                    <td class="p-2 border-r border-slate-200 font-medium text-slate-900">${escapeHtml(item.namaAnggota)}</td>
+                    <td class="p-2 border-r border-slate-200">${escapeHtml(item.statusKeluarga)}</td>
+                    <td class="p-2 border-r border-slate-200">${item.jenisKelamin === 'Laki-Laki' ? 'L' : 'P'}</td>
+                    <td class="p-2 border-r border-slate-200">${escapeHtml(item.tempatLahir || '-')}</td>
+                    <td class="p-2 text-center border-r border-slate-200">${escapeHtml(item.tgl || '00')}</td>
+                    <td class="p-2 text-center border-r border-slate-200">${escapeHtml(item.bln || '00')}</td>
+                    <td class="p-2 text-center border-r border-slate-200">${escapeHtml(item.thn || '0000')}</td>
+                    <td class="p-2 text-center border-r border-slate-200">
+                        <span class="px-1.5 py-0.5 text-[10px] rounded ${item.statusDomisili === 'Dalam Jemaat' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                            ${escapeHtml(item.statusDomisili)}
+                        </span>
+                    </td>
+                    <td class="p-2 text-center border-r border-slate-200 font-semibold">${escapeHtml(item.golDarah || '??')}</td>
+                    <td class="p-2 border-r border-slate-200">${escapeHtml(item.pendidikan || '-')}</td>
+                    <td class="p-2 border-r border-slate-200">${escapeHtml(item.pekerjaan || '-')}</td>
+                    <td class="p-2 border-r border-slate-200">${escapeHtml(item.statusSakramental || '-')}</td>
+                    
+                    <td class="p-2 text-center border-r border-slate-200">${escapeHtml(item.baptisTgl || '00')}</td>
+                    <td class="p-2 text-center border-r border-slate-200">${escapeHtml(item.baptisBln || '00')}</td>
+                    <td class="p-2 text-center border-r border-slate-200 text-[10px]">${escapeHtml(item.baptisThn || '0000')}</td>
+                    
+                    <td class="p-2 text-center border-r border-slate-200">${escapeHtml(item.sidiTgl || '00')}</td>
+                    <td class="p-2 text-center border-r border-slate-200">${escapeHtml(item.sidiBln || '00')}</td>
+                    <td class="p-2 text-center border-r border-slate-200 text-[10px]">${escapeHtml(item.sidiThn || '0000')}</td>
+                    
+                    <td class="p-2 text-center border-r border-slate-200">${escapeHtml(item.nikahTgl || '00')}</td>
+                    <td class="p-2 text-center border-r border-slate-200">${escapeHtml(item.nikahBln || '00')}</td>
+                    <td class="p-2 text-center border-r border-slate-200 text-[10px]">${escapeHtml(item.nikahThn || '0000')}</td>
+                    
+                    <td class="p-2 text-center">
+                        <div class="flex justify-center gap-1">
+                            <button onclick="editWarga(${realIndex})" title="Edit" class="p-1 text-blue-600 hover:bg-blue-50 rounded">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="deleteWarga(${realIndex})" title="Hapus" class="p-1 text-red-600 hover:bg-red-50 rounded">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 2. Mobile Cards View Rendering (Responsive Optimization)
+        function renderCardView(filteredData) {
+            const cardContainer = document.getElementById('cardViewContainer');
+            cardContainer.innerHTML = '';
+
+            filteredData.forEach(item => {
+                const realIndex = dataWarga.indexOf(item);
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3";
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+                        <div>
+                            <span class="text-[10px] font-semibold uppercase text-indigo-600 tracking-wider">KK: ${escapeHtml(item.namaKk)}</span>
+                            <h4 class="font-bold text-slate-800 text-sm">${escapeHtml(item.namaAnggota)}</h4>
+                        </div>
+                        <span class="px-2 py-0.5 text-[10px] rounded font-medium ${item.statusDomisili === 'Dalam Jemaat' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                            ${escapeHtml(item.statusDomisili)}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                        <div><span class="text-slate-400">Status:</span> ${escapeHtml(item.statusKeluarga)}</div>
+                        <div><span class="text-slate-400">Gender:</span> ${escapeHtml(item.jenisKelamin)}</div>
+                        <div><span class="text-slate-400">Lahir:</span> ${escapeHtml(item.tempatLahir || '-')}, ${item.tgl}/${item.bln}/${item.thn}</div>
+                        <div><span class="text-slate-400">Gol Darah:</span> ${escapeHtml(item.golDarah)}</div>
+                        <div><span class="text-slate-400">Pendidikan:</span> ${escapeHtml(item.pendidikan)}</div>
+                        <div><span class="text-slate-400">Pekerjaan:</span> ${escapeHtml(item.pekerjaan)}</div>
+                    </div>
+
+                    <div class="bg-slate-50 p-2 rounded-lg text-[11px] text-slate-600 space-y-1">
+                        <div><strong>Sakramen:</strong> ${escapeHtml(item.statusSakramental)}</div>
+                        <div class="flex justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200">
+                            <span>Baptis: ${item.baptisTgl}/${item.baptisBln}/${item.baptisThn}</span>
+                            <span>Sidi: ${item.sidiTgl}/${item.sidiBln}/${item.sidiThn}</span>
+                            <span>Nikah: ${item.nikahTgl}/${item.nikahBln}/${item.nikahThn}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button onclick="editWarga(${realIndex})" class="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs flex items-center gap-1 font-medium">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit
+                        </button>
+                        <button onclick="deleteWarga(${realIndex})" class="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs flex items-center gap-1 font-medium">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
+                        </button>
+                    </div>
+                `;
+                cardContainer.appendChild(card);
+            });
+        }
+
+        function updateStatistics() {
+            const kkSet = new Set(dataWarga.map(d => d.namaKk.trim().toUpperCase()));
+            document.getElementById('stat-total-kk').innerText = kkSet.size;
+            document.getElementById('stat-total-warga').innerText = dataWarga.length;
+
+            const male = dataWarga.filter(d => d.jenisKelamin === 'Laki-Laki').length;
+            const female = dataWarga.filter(d => d.jenisKelamin === 'Perempuan').length;
+            document.getElementById('stat-gender-ratio').innerText = `${male} L / ${female} P`;
+
+            const sidiCount = dataWarga.filter(d => d.sidiThn && d.sidiThn !== '0000').length;
+            const nikahCount = dataWarga.filter(d => d.nikahThn && d.nikahThn !== '0000').length;
+            document.getElementById('stat-sacrament').innerText = `${sidiCount} S / ${nikahCount} N`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function openFormModal(isEdit = false) {
+            document.getElementById('modalForm').classList.remove('hidden');
+            document.getElementById('modalAlert').classList.add('hidden');
+            if (!isEdit) {
+                document.getElementById('wargaForm').reset();
+                document.getElementById('editIndex').value = "-1";
+                document.getElementById('modalTitle').querySelector('span').innerText = "Tambah Data Warga Unit";
+            }
+        }
+
+        function closeFormModal() {
+            document.getElementById('modalForm').classList.add('hidden');
+        }
+
+        function openConfigModal() {
+            document.getElementById('modalConfig').classList.remove('hidden');
+            document.getElementById('scriptUrlInput').value = googleSheetsUrl;
+        }
+
+        function closeConfigModal() {
+            document.getElementById('modalConfig').classList.add('hidden');
+        }
+
+        function saveGoogleSheetsUrl() {
+            const url = document.getElementById('scriptUrlInput').value.trim();
+            googleSheetsUrl = url;
+            localStorage.setItem('google_sheets_script_url', url);
+            updateSheetsBanner();
+            closeConfigModal();
+            showToast("Konfigurasi Google Sheets berhasil disimpan!");
+        }
+
+        function editWarga(index) {
+            const item = dataWarga[index];
+            if (!item) return;
+
+            document.getElementById('editIndex').value = index;
+            document.getElementById('modalTitle').querySelector('span').innerText = "Edit Data Warga Unit";
+
+            document.getElementById('namaKk').value = item.namaKk || '';
+            document.getElementById('namaAnggota').value = item.namaAnggota || '';
+            document.getElementById('statusKeluarga').value = item.statusKeluarga || 'Kepala Keluarga';
+            document.getElementById('jenisKelamin').value = item.jenisKelamin || 'Laki-Laki';
+            document.getElementById('tempatLahir').value = item.tempatLahir || '';
+            
+            document.getElementById('tgl').value = item.tgl || '00';
+            document.getElementById('bln').value = item.bln || '00';
+            document.getElementById('thn').value = item.thn || '0000';
+
+            document.getElementById('statusDomisili').value = item.statusDomisili || 'Dalam Jemaat';
+            document.getElementById('golDarah').value = item.golDarah || '??';
+            document.getElementById('pendidikan').value = item.pendidikan || 'Tamat SMA';
+            document.getElementById('pekerjaan').value = item.pekerjaan || '';
+            document.getElementById('statusSakramental').value = item.statusSakramental || 'Sudah Baptis, Sidi dan Nikah';
+
+            document.getElementById('baptisTgl').value = item.baptisTgl || '00';
+            document.getElementById('baptisBln').value = item.baptisBln || '00';
+            document.getElementById('baptisThn').value = item.baptisThn || '0000';
+
+            document.getElementById('sidiTgl').value = item.sidiTgl || '00';
+            document.getElementById('sidiBln').value = item.sidiBln || '00';
+            document.getElementById('sidiThn').value = item.sidiThn || '0000';
+
+            document.getElementById('nikahTgl').value = item.nikahTgl || '00';
+            document.getElementById('nikahBln').value = item.nikahBln || '00';
+            document.getElementById('nikahThn').value = item.nikahThn || '0000';
+
+            openFormModal(true);
+        }
+
+        function saveWarga(event) {
+            event.preventDefault();
+            const namaKk = document.getElementById('namaKk').value.trim().toUpperCase();
+            const namaAnggota = document.getElementById('namaAnggota').value.trim();
+
+            if (!namaKk || !namaAnggota) {
+                showModalAlert('Nama Kepala Keluarga dan Nama Anggota wajib diisi!');
+                return;
+            }
+
+            const record = {
+                namaKk: namaKk,
+                namaAnggota: namaAnggota,
+                statusKeluarga: document.getElementById('statusKeluarga').value,
+                jenisKelamin: document.getElementById('jenisKelamin').value,
+                tempatLahir: document.getElementById('tempatLahir').value.trim(),
+                tgl: padZero(document.getElementById('tgl').value, 2),
+                bln: padZero(document.getElementById('bln').value, 2),
+                thn: padZero(document.getElementById('thn').value, 4),
+                statusDomisili: document.getElementById('statusDomisili').value,
+                golDarah: document.getElementById('golDarah').value,
+                pendidikan: document.getElementById('pendidikan').value,
+                pekerjaan: document.getElementById('pekerjaan').value.trim(),
+                statusSakramental: document.getElementById('statusSakramental').value,
+                baptisTgl: padZero(document.getElementById('baptisTgl').value, 2),
+                baptisBln: padZero(document.getElementById('baptisBln').value, 2),
+                baptisThn: padZero(document.getElementById('baptisThn').value, 4),
+                sidiTgl: padZero(document.getElementById('sidiTgl').value, 2),
+                sidiBln: padZero(document.getElementById('sidiBln').value, 2),
+                sidiThn: padZero(document.getElementById('sidiThn').value, 4),
+                nikahTgl: padZero(document.getElementById('nikahTgl').value, 2),
+                nikahBln: padZero(document.getElementById('nikahBln').value, 2),
+                nikahThn: padZero(document.getElementById('nikahThn').value, 4)
+            };
+
+            const editIndex = parseInt(document.getElementById('editIndex').value);
+
+            if (editIndex >= 0 && editIndex < dataWarga.length) {
+                dataWarga[editIndex] = record;
+                showToast("Data berhasil diperbarui!");
+            } else {
+                dataWarga.push(record);
+                showToast("Data warga berhasil ditambahkan!");
+            }
+
+            saveToLocalStorage();
+            syncToGoogleSheets(record, editIndex >= 0 ? 'UPDATE' : 'CREATE');
+            renderData();
+            closeFormModal();
+        }
+
+        function padZero(val, length) {
+            if (!val || val === '' || val === '0') return '0'.repeat(length);
+            return String(val).padStart(length, '0');
+        }
+
+        function deleteWarga(index) {
+            const item = dataWarga[index];
+            if (!item) return;
+
+            const confirmDiv = document.createElement('div');
+            confirmDiv.className = "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-center items-center p-4";
+            confirmDiv.innerHTML = `
+                <div class="bg-white p-6 rounded-2xl shadow-xl max-w-sm w-full text-center space-y-4">
+                    <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base">Hapus Data Warga?</h3>
+                        <p class="text-xs text-slate-500 mt-1">Hapus <strong>${escapeHtml(item.namaAnggota)}</strong> dari daftar?</p>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <button id="btnCancelDel" class="flex-1 py-2 bg-slate-100 text-slate-700 font-medium rounded-lg text-xs">Batal</button>
+                        <button id="btnConfirmDel" class="flex-1 py-2 bg-red-600 text-white font-medium rounded-lg text-xs">Hapus</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(confirmDiv);
+            lucide.createIcons();
+
+            document.getElementById('btnCancelDel').onclick = () => confirmDiv.remove();
+            document.getElementById('btnConfirmDel').onclick = () => {
+                const deletedItem = dataWarga.splice(index, 1)[0];
+                saveToLocalStorage();
+                syncToGoogleSheets(deletedItem, 'DELETE');
+                renderData();
+                confirmDiv.remove();
+                showToast("Data berhasil dihapus");
+            };
+        }
+
+        // Send Data Sync Payload to Google Apps Script Endpoint
+        function syncToGoogleSheets(item, action) {
+            if (!googleSheetsUrl || googleSheetsUrl.trim() === '') return;
+
+            fetch(googleSheetsUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: action, payload: item, allData: dataWarga })
+            }).then(() => {
+                showToast("Tersinkron dengan Google Sheets cloud");
+            }).catch(err => {
+                console.error("Gagal sync ke Google Sheets:", err);
+            });
+        }
+
+        // Fetch Data from Google Sheets Database
+        function fetchFromSheets() {
+            if (!googleSheetsUrl) {
+                showToast("URL Google Sheets belum diatur!");
+                return;
+            }
+            showToast("Mengambil data dari Google Sheets...");
+            fetch(googleSheetsUrl + "?action=GET")
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        dataWarga = data;
+                        saveToLocalStorage();
+                        renderData();
+                        closeConfigModal();
+                        showToast("Berhasil sinkron data dari Google Sheets!");
+                    }
+                })
+                .catch(err => {
+                    showToast("Gagal mengambil data dari Google Sheets");
+                });
+        }
+
+        function exportToCSV() {
+            if (dataWarga.length === 0) {
+                showToast("Tidak ada data untuk diekspor!");
+                return;
+            }
+
+            const headers = [
+                "Nama Kepala Keluarga", "Nama Anggota Keluarga", "Status Keluarga", "Jenis Kelamin",
+                "Tempat Lahir", "Tgl Lahir", "Bln Lahir", "Thn Lahir", "Status Domisili", "Gol Darah",
+                "Pendidikan", "Pekerjaan", "Status Sakramental",
+                "Tgl Baptis", "Bln Baptis", "Thn Baptis",
+                "Tgl Sidi", "Bln Sidi", "Thn Sidi",
+                "Tgl Nikah", "Bln Nikah", "Thn Nikah"
+            ];
+
+            let csvContent = "\uFEFF" + headers.join(",") + "\n";
+            dataWarga.forEach(row => {
+                const values = [
+                    `"${row.namaKk || ''}"`, `"${row.namaAnggota || ''}"`, `"${row.statusKeluarga || ''}"`, `"${row.jenisKelamin || ''}"`,
+                    `"${row.tempatLahir || ''}"`, `"${row.tgl || '00'}"`, `"${row.bln || '00'}"`, `"${row.thn || '0000'}"`,
+                    `"${row.statusDomisili || ''}"`, `"${row.golDarah || ''}"`, `"${row.pendidikan || ''}"`, `"${row.pekerjaan || ''}"`,
+                    `"${row.statusSakramental || ''}"`, `"${row.baptisTgl || '00'}"`, `"${row.baptisBln || '00'}"`, `"${row.baptisThn || '0000'}"`,
+                    `"${row.sidiTgl || '00'}"`, `"${row.sidiBln || '00'}"`, `"${row.sidiThn || '0000'}"`, `"${row.nikahTgl || '00'}"`,
+                    `"${row.nikahBln || '00'}"`, `"${row.nikahThn || '0000'}"`
+                ];
+                csvContent += values.join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Data_Warga_Unit_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast("Ekspor CSV berhasil diunduh");
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = message;
+            toast.classList.remove('translate-y-10', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function showModalAlert(msg) {
+            const el = document.getElementById('modalAlert');
+            el.innerText = msg;
+            el.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
